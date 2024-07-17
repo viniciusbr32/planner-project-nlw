@@ -37,7 +37,15 @@ export function DestinationAndDateHeader() {
     setChangeDateOpen(false);
   }
 
- 
+  async function updateData() {
+    const response = await api.put(`/trips/${tripId}`, {
+      starts_at: changeStartAndEndDates?.from,
+      ends_at: changeStartAndEndDates?.to,
+      destination: trip?.destination,
+    });
+    window.document.location.reload();
+  }
+
   return (
     <div className="flex items-center justify-between h-16 px-4 rounded-xl bg-zinc-900 shadow-shape">
       <div className="flex items-center gap-2">
@@ -68,6 +76,7 @@ export function DestinationAndDateHeader() {
               </div>
             </div>
             <DayPicker mode="range" selected={changeStartAndEndDates} onSelect={setChangeStartAndEndDates} />
+            <button onClick={updateData}>Trocar Data</button>
           </div>
         </div>
       )}
