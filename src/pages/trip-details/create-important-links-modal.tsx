@@ -1,30 +1,27 @@
 import { Link2, Tag, X } from 'lucide-react';
 import { Button } from '../../components/button';
 import { FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
-import { api } from '../../lib/axios';
+import { toast } from 'react-toastify';
 
 interface CreateImportantLinksModalProps {
   closeCreateImportantLinks: () => void;
+  addLinks: (title: string, url: string) => void;
 }
 
-export function CreateImportantLinksModal({ closeCreateImportantLinks }: CreateImportantLinksModalProps) {
-  const { tripId } = useParams();
-
+export function CreateImportantLinksModal({ closeCreateImportantLinks, addLinks }: CreateImportantLinksModalProps) {
   async function createImportantLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const data = new FormData(event.currentTarget);
 
-    const title = data.get('title')?.toString();
-    const url = data.get('url')?.toString();
-
-    await api.post(`/trips/${tripId}/links`, {
-      title,
-      url,
-    });
-
-    window.document.location.reload();
+    const title = data.get('title')?.toString() || '';
+    const url = data.get('url')?.toString() || '';
+    try {
+      addLinks(title, url);
+      closeCreateImportantLinks();
+    } catch (error) {
+      toast.error('Erro ao criar o link.');
+    }
   }
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60 ">
