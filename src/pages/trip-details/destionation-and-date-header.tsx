@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { api } from '../../lib/axios';
 import { format } from 'date-fns';
 import { DateRange, DayPicker } from 'react-day-picker';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface Trip {
   destination: string;
@@ -19,18 +21,20 @@ export function DestinationAndDateHeader() {
   const [trip, setTrip] = useState<Trip | undefined>();
   const [changeDateOpen, setChangeDateOpen] = useState(false);
   const [changeStartAndEndDates, setChangeStartAndEndDates] = useState<DateRange | undefined>();
+  const [changeDestination, setChangeDestination] = useState('');
 
   useEffect(() => {
     api.get(`/trips/${tripId}`).then((response) => setTrip(response.data.trip));
   }, [tripId]);
 
   const displayedDate = trip
-    ? format(trip.starts_at, "d 'de ' LLL ").concat('até ').concat(format(trip.ends_at, "d' de ' LLL"))
+    ? format(new Date(trip.starts_at), "d 'de ' LLL ")
+        .concat('até ')
+        .concat(format(new Date(trip.ends_at), "d' de ' LLL"))
     : null;
 
   function openChangeDatePicker() {
     setChangeDateOpen(true);
-    console.log(changeDateOpen);
   }
 
   function closeChangeDatePicker() {
@@ -39,11 +43,20 @@ export function DestinationAndDateHeader() {
 
   async function updateData() {
     const response = await api.put(`/trips/${tripId}`, {
-      starts_at: changeStartAndEndDates?.from,
-      ends_at: changeStartAndEndDates?.to,
-      destination: trip?.destination,
+      starts_at: changeStartAndEndDates ? changeStartAndEndDates.from!.toISOString() : trip?.starts_at,
+      ends_at: changeStartAndEndDates ? changeStartAndEndDates.to!.toISOString() : trip?.ends_at,
+      destination: changeDestination ? changeDestination : trip?.destination,
     });
-    window.document.location.reload();
+    if (response.status === 200 && trip) {
+      setTrip({
+        ...trip,
+        starts_at: changeStartAndEndDates ? changeStartAndEndDates.from!.toISOString() : trip.starts_at,
+        ends_at: changeStartAndEndDates ? changeStartAndEndDates.to!.toISOString() : trip.ends_at,
+        destination: changeDestination ? changeDestination : trip.destination,
+      });
+      toast.success('Data e destino atualizados com sucesso!');
+      closeChangeDatePicker();
+    }
   }
 
   return (
@@ -52,7 +65,7 @@ export function DestinationAndDateHeader() {
         <MapPin className="size-5 text-zinc-400" />
         <span className="text-lg text-zinc-100">{trip?.destination}</span>
       </div>
-
+      <ToastContainer />
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-2">
           <Calendar className="size-5 text-zinc-400" />
@@ -69,13 +82,17 @@ export function DestinationAndDateHeader() {
           <div className="px-6 py-5 space-y-5 rounded-xl shadow-shape bg-zinc-900">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Selecione a data</h2>
+                <h2 className="text-lg font-semibold">Selecione a data e Destino</h2>
                 <button onClick={closeChangeDatePicker}>
                   <X className="size-5 text-zinc-400" />{' '}
                 </button>
               </div>
             </div>
-            <DayPicker mode="range" selected={changeStartAndEndDates} onSelect={setChangeStartAndEndDates} />
+            <div>
+              <DayPicker mode="range" selected={changeStartAndEndDates} onSelect={setChangeStartAndEndDates} />
+              <label>Trocar Destino ? </label>
+              <input placeholder="" onChange={(event) => setChangeDestination(event.target.value)} />
+            </div>
             <button onClick={updateData}>Trocar Data</button>
           </div>
         </div>
